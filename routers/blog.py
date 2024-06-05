@@ -16,27 +16,90 @@ class CreateBlog(BaseModel):
         "category_id": 0,
         "title": "",
         "contents": "",
-        "staff_id":0,
-        "created_date":date.today()
+        "staff_id": 0,
+        "created_date": date.today()
+    }
+
+class UpdateBlog(BaseModel):
+    content: dict = {
+        "category_id": 0,
+        "title": "",
+        "contents": "",
+        "staff_id": 0,
+        "created_date": date.today()
     }
 
 
 @router.post("/post", summary="Blog Ekleme")
-def add_author(blog: CreateBlog, chekc_staff: Staff = Depends(token_check)):
+def add_blog(blog: CreateBlog, chekc_staff: Staff = Depends(token_check)):
     staff_check, connection, cursor = chekc_staff
     if not staff_check: return JSONResponse(status_code=401, content={"status": False, "message": "staff_not_found"})
 
     content = blog.content
 
-    check_record = fetchone__dict2dot(cursor, f'''select * from staff where content ->>'email'='{content['staff_id']}';''')
-    if check_record:
-        connection_close(connection, cursor)
-        return {"status": "email_already_exist"}
+    cursor.execute(f'''insert into blog (content) values ({Json(content)})  ;''')
+    commit__connection_close(connection, cursor)
+    return {"status": "created"}
 
-    cursor.execute(f'''insert into author (content) values ({Json(content)})  ;''')
+
+
+
+@router.get("/gets", summary="blogları getirme")
+def get_blogs(check_staff: Staff = Depends(token_check)):
+    staff_check, connection, cursor = check_staff
+    if not staff_check: return JSONResponse(status_code=401, content={"status": False, "message": "staff_not_found"})
+
+    blogs = fetchall__dict2dot(cursor, f'''select * from blog;''')
+    if blogs:
+        return blogs
+    connection_close(connection,cursor)
+    return {"status":"blog_not_found"}
+
+@router.get("/get", summary="blog getirme")
+def get_blogs(blog_id:int ,check_staff: Staff = Depends(token_check)):
+    staff_check, connection, cursor = check_staff
+    if not staff_check: return JSONResponse(status_code=401, content={"status": False, "message": "staff_not_found"})
+
+    blogs = fetchone__dict2dot(cursor, f'''select * from blog where id ={blog_id} ; ''')
+    if blogs:
+        return blogs
+    connection_close(connection,cursor)
+    return {"status":"blog_not_found"}
+
+@router.get("/get-id", summary="get ids")
+def get_blogs(blog_id:int ,check_staff: Staff = Depends(token_check)):
+    staff_check, connection, cursor = check_staff
+    if not staff_check: return JSONResponse(status_code=401, content={"status": False, "message": "staff_not_found"})
+
+    blogs = fetchall__dict2dot(cursor, f'''select * from blog where content ->>'category_id' = '{blog_id}'   ; ''')
+    if blogs:
+        return blogs
+    connection_close(connection,cursor)
+    return {"status":"blog_not_found"}
+
+
+@router.put("/update",summary="post staff")
+def update_blog(blog_id:int,blog_info:UpdateBlog,check_staff:Staff=Depends(token_check)):
+    customer_staff, connection, cursor = check_staff
+    if not customer_staff: return JSONResponse(status_code=401, content={'status': False, 'message': 'staff_not_found'})
+
+    check_record = fetchone__dict2dot(cursor,f'''select * from blog where id = {blog_id}   ;''')
+    print(check_record)
+    if not check_record:
+        connection_close(connection,cursor)
+        return {"status":"blog_not_found"}
+
+    incoming_data = blog_info.content
+
+    new_blog_data = check_record.content
+    new_blog_data["category_id"]= incoming_data["category_id"]
+    new_blog_data["title"]= incoming_data["title"]
+    new_blog_data["contents"]= incoming_data["contents"]
+    new_blog_data["staff_id"]= incoming_data["staff_id"]
+    new_blog_data["created_date"]= incoming_data["created_date"]
+
+    cursor.execute(f'''update blog set content= ({Json(new_blog_data)}) where id={blog_id}   ;''')
     commit__connection_close(connection,cursor)
-    return {"status":"created"}
-
-
+    return {"status":"updated"}
 
 

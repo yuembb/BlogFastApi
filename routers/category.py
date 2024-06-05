@@ -14,6 +14,11 @@ class CreateCategory(BaseModel):
         "name": "",
         "slug": ""
     }
+class UpdateCategory(BaseModel):
+    content: dict = {
+        "name": "",
+        "slug": ""
+    }
 
 
 @router.post("/post", summary="Kategori Ekleme")
@@ -27,6 +32,51 @@ def add_category(category: CreateCategory, chekc_staff: Staff = Depends(token_ch
     commit__connection_close(connection,cursor)
     return {"status":"created"}
 
+@router.get("/gets",summary="get category")
+def gets_category(check_staff:Staff=Depends(token_check)):
+    customer_staff, connection, cursor = check_staff
+    if not customer_staff: return JSONResponse(status_code=401, content={'status': False, 'message': 'staff_not_found'})
+
+    category = fetchall__dict2dot(cursor,f'''select * from category;''')
+    if category:
+        return category
+
+    connection_close(connection,cursor)
+    return {"status":"staff_not_found"}
+
+@router.get("/get",summary="get category")
+def gets_category(staff_id:int,check_staff:Staff=Depends(token_check)):
+    customer_staff, connection, cursor = check_staff
+    if not customer_staff: return JSONResponse(status_code=401, content={'status': False, 'message': 'staff_not_found'})
+
+    category = fetchone__dict2dot(cursor,f'''select * from category where id={staff_id} ;''')
+    if category:
+        return category
+
+    connection_close(connection,cursor)
+    return {"status":"staff_not_found"}
+
+
+@router.put("/update",summary="update kategori")
+def update_category(category_id:int,category_info:UpdateCategory,chekc_staff:Staff=Depends(token_check)):
+    customer_staff, connection, cursor = chekc_staff
+    if not customer_staff: return JSONResponse(status_code=401, content={'status': False, 'message': 'staff_not_found'})
+
+    check_record = fetchone__dict2dot(cursor,f'''select * from category where id = {category_id}   ;''')
+    if not check_record:
+        connection_close(connection, cursor)
+        return {"status": "category_not_found"}
+
+    incoming_data = category_info.content
+
+    category_new_data = check_record.content
+    category_new_data["name"] = incoming_data["name"]
+    category_new_data["slug"] = incoming_data["slug"]
+
+
+    cursor.execute(f'''update category set content ={Json(category_new_data)} where id = {category_id}   ;''')
+    commit__connection_close(connection,cursor)
+    return {"status":"updated"}
 
 
 
