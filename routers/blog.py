@@ -66,12 +66,13 @@ def get_blogs(blog_id:int ,check_staff: Staff = Depends(token_check)):
     connection_close(connection,cursor)
     return {"status":"blog_not_found"}
 
-@router.get("/get-id", summary="get ids")
+@router.get("/get-id", summary="get kategori ids")
 def get_blogs(blog_id:int ,check_staff: Staff = Depends(token_check)):
     staff_check, connection, cursor = check_staff
     if not staff_check: return JSONResponse(status_code=401, content={"status": False, "message": "staff_not_found"})
-
+    sql = f'''select * from blog where content ->>'category_id' = '{blog_id}'   ; '''
     blogs = fetchall__dict2dot(cursor, f'''select * from blog where content ->>'category_id' = '{blog_id}'   ; ''')
+    print(sql)
     if blogs:
         return blogs
     connection_close(connection,cursor)
