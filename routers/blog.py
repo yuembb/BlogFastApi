@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from psycopg2.extras import Json
 from pydantic import BaseModel
@@ -9,21 +11,24 @@ from routers.staff import Staff
 router = APIRouter()
 
 
-class CreateAuthor(BaseModel):
+class CreateBlog(BaseModel):
     content: dict = {
-        "name": "",
-        "surname": "",
-        "email": ""
+        "category_id": 0,
+        "title": "",
+        "contents": "",
+        "staff_id":0,
+        "created_date":date.today()
     }
 
 
-@router.post("/post", summary="Yazar Ekleme")
-def add_author(author: CreateAuthor, chekc_staff: Staff = Depends(token_check)):
+@router.post("/post", summary="Blog Ekleme")
+def add_author(blog: CreateBlog, chekc_staff: Staff = Depends(token_check)):
     staff_check, connection, cursor = chekc_staff
     if not staff_check: return JSONResponse(status_code=401, content={"status": False, "message": "staff_not_found"})
 
-    content = author.content
-    check_record = fetchone__dict2dot(cursor, f'''select * from author where content ->>'email'='{content['email']}';''')
+    content = blog.content
+
+    check_record = fetchone__dict2dot(cursor, f'''select * from staff where content ->>'email'='{content['staff_id']}';''')
     if check_record:
         connection_close(connection, cursor)
         return {"status": "email_already_exist"}

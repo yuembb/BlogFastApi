@@ -97,7 +97,7 @@ def staff_login(request: Request, form: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token, 'staff_id': staff_id}
 
 
-@router.post("/create", summary="Create Staff")
+@router.post("/create", summary="Yazar Oluşturma")
 def create_staff( record_info: CreateStaff, check_staff: Staff = Depends(token_check)):
     ###################################################################
     customer_staff, connection, cursor = check_staff

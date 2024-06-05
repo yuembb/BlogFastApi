@@ -23,7 +23,6 @@ def add_category(category: CreateCategory, chekc_staff: Staff = Depends(token_ch
 
     content = category.content
 
-
     cursor.execute(f'''insert into category (content) values ({Json(content)})  ;''')
     commit__connection_close(connection,cursor)
     return {"status":"created"}
