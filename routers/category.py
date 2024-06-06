@@ -111,3 +111,4 @@ def delete_category(category_id:int,check_staff:Staff=Depends(token_check)):
     commit__connection_close(connection,cursor)
     return {"status":"deleted"}
 
+
