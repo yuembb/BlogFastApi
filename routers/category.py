@@ -56,6 +56,24 @@ def gets_category(staff_id:int,check_staff:Staff=Depends(token_check)):
     connection_close(connection,cursor)
     return {"status":"staff_not_found"}
 
+@router.get("/slug-list",summary="list slug")
+def get_slug(chekc_staff:Staff=Depends(token_check)):
+    staff_check , connection,cursor = chekc_staff
+    if not staff_check: return JSONResponse(status_code=401, content={"status":False,"message":"staff_not_found"})
+
+    slug_list =[]
+    check_record = fetchall__dict2dot(cursor,f'''select * from category;''')
+    if not check_record:
+        return {"category_not_found"}
+
+
+    for slug in check_record:
+        slug_dict={
+            "slug_name":slug.content["slug"]
+        }
+        slug_list.append(slug_dict)
+    return slug_list
+
 
 @router.put("/update",summary="update kategori")
 def update_category(category_id:int,category_info:UpdateCategory,chekc_staff:Staff=Depends(token_check)):

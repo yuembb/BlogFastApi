@@ -87,7 +87,6 @@ def get_blogs(category_id: int, check_staff: Staff = Depends(token_check)):
     where b.content ->> 'category_id' = '{category_id}'
     ''')
 
-
     if blogs:
         return blogs
     connection_close(connection, cursor)
@@ -121,23 +120,6 @@ def list_slug(category_slug:str,check_staff:Staff=Depends(token_check)):
     connection_close(connection,curosr)
     return {"status":"blog_not_found"}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @router.put("/update", summary="post staff")
 def update_blog(blog_id: int, blog_info: UpdateBlog, check_staff: Staff = Depends(token_check)):
     customer_staff, connection, cursor = check_staff
@@ -160,3 +142,17 @@ def update_blog(blog_id: int, blog_info: UpdateBlog, check_staff: Staff = Depend
     cursor.execute(f'''update blog set content= ({Json(new_blog_data)}) where id={blog_id}   ;''')
     commit__connection_close(connection, cursor)
     return {"status": "updated"}
+
+@router.get("/list-date",summary="list for date")
+def get_date_list(check_staff:Staff=Depends(token_check)):
+    staff_check , connection,cursor = check_staff
+    if not staff_check: return JSONResponse(status_code=401, content={"status":False,"message":"staff_not_found"})
+
+    check_record = fetchall__dict2dot(cursor,f'''select * from blog order by created_date desc ;''')
+    if not check_record:
+        return {"status":"blog_not_found"}
+
+    for date in check_record:
+        print(date)
+
+
