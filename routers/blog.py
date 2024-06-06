@@ -148,11 +148,23 @@ def get_date_list(check_staff:Staff=Depends(token_check)):
     staff_check , connection,cursor = check_staff
     if not staff_check: return JSONResponse(status_code=401, content={"status":False,"message":"staff_not_found"})
 
-    check_record = fetchall__dict2dot(cursor,f'''select * from blog order by content->>'created_date' ;''')
+    check_record = fetchall__dict2dot(cursor,f'''
+    select
+    b.content ->>'title' as blog_title,
+    b.content ->>'contents' as blog_content,
+    b.content ->>'created_date' as blog_created_date,
+    s.content ->>'name' as author_name,
+    c.content ->>'name' as category_name
+    from blog b
+    inner join 
+    staffs s on(b.content->>'staff_id')::int = s.id
+    inner join
+    category c on(b.content->>'category_id')::int = c.id
+    order by b.content->>'created_date' ;''')
+
     if not check_record:
         return {"status":"blog_not_found"}
+    return check_record
 
-    for date in check_record:
-        print(date)
 
 
