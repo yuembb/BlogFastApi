@@ -165,3 +165,20 @@ def update_staff(staff_id:int,staff_info:StaffUpdate,check_staff:Staff=Depends(t
     cursor.execute(f'''update staffs set content= ({Json(new_staff_data)}) where id={staff_id}   ;''')
     commit__connection_close(connection,cursor)
     return {"status":"updated"}
+
+
+
+
+@router.delete("/delete",summary="staff silme")
+def delete_staff(staff_id:int,check_staff:Staff=Depends(token_check)):
+    staff_check , connection,cursor = check_staff
+    if not staff_check: return JSONResponse(status_code=401, content={"status":False,"message":"staff_not_found"})
+
+    check_record = fetchone__dict2dot(cursor,f'''select * from staffs;''')
+    if not check_record:
+        connection_close(connection,cursor)
+        return {"status":"staff_not_found"}
+
+    cursor.execute(f'''delete from staffs where id ={staff_id}    ;''')
+    commit__connection_close(connection,cursor)
+    return {"status":"deleted"}

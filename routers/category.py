@@ -97,4 +97,17 @@ def update_category(category_id:int,category_info:UpdateCategory,chekc_staff:Sta
     return {"status":"updated"}
 
 
+@router.delete("/delete",summary="category silme")
+def delete_category(category_id:int,check_staff:Staff=Depends(token_check)):
+    staff_check , connection,cursor = check_staff
+    if not staff_check: return JSONResponse(status_code=401, content={"status":False,"message":"staff_not_found"})
+
+    check_record = fetchone__dict2dot(cursor,f'''select * from category;''')
+    if not check_record:
+        connection_close(connection,cursor)
+        return {"status":"category_not_found"}
+
+    cursor.execute(f'''delete from category where id ={category_id}    ;''')
+    commit__connection_close(connection,cursor)
+    return {"status":"deleted"}
 
