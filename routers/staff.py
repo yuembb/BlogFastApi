@@ -37,7 +37,8 @@ class StaffUpdate(BaseModel):
     content: dict = {
         "name": "",
         "surname": "",
-        "email": ""
+        "email": "",
+        "password": ""
     }
 
 
@@ -97,7 +98,7 @@ def staff_login(request: Request, form: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token, 'staff_id': staff_id}
 
 
-@router.post("/create", summary="Create Staff")
+@router.post("/create", summary="Yazar Oluşturma")
 def create_staff( record_info: CreateStaff, check_staff: Staff = Depends(token_check)):
     ###################################################################
     customer_staff, connection, cursor = check_staff
@@ -117,6 +118,67 @@ def create_staff( record_info: CreateStaff, check_staff: Staff = Depends(token_c
 
     return {'status': 'created'}
 
+@router.get("/gets",summary="get staffs")
+def gets_staff(check_staff:Staff=Depends(token_check)):
+    customer_staff, connection, cursor = check_staff
+    if not customer_staff: return JSONResponse(status_code=401, content={'status': False, 'message': 'staff_not_found'})
+
+    staffs = fetchall__dict2dot(cursor,f'''select * from staffs;''')
+    if staffs:
+        return staffs
+
+    connection_close(connection,cursor)
+    return {"status":"staff_not_found"}
+
+@router.get("/get",summary="get staffs")
+def gets_staff(staff_id:int,check_staff:Staff=Depends(token_check)):
+    customer_staff, connection, cursor = check_staff
+    if not customer_staff: return JSONResponse(status_code=401, content={'status': False, 'message': 'staff_not_found'})
+
+    staffs = fetchone__dict2dot(cursor,f'''select * from staffs where id={staff_id} ;''')
+    if staffs:
+        return staffs
+
+    connection_close(connection,cursor)
+    return {"status":"staff_not_found"}
+
+
+@router.put("/update",summary="post staff")
+def update_staff(staff_id:int,staff_info:StaffUpdate,check_staff:Staff=Depends(token_check)):
+    customer_staff, connection, cursor = check_staff
+    if not customer_staff: return JSONResponse(status_code=401, content={'status': False, 'message': 'staff_not_found'})
+
+    check_record = fetchone__dict2dot(cursor,f'''select * from staffs where id = {staff_id}   ;''')
+    if not check_record:
+        connection_close(connection,cursor)
+        return {"status":"staff_not_found"}
+
+    incoming_data = staff_info.content
+
+    new_staff_data = check_record.content
+    new_staff_data["name"]= incoming_data["name"]
+    new_staff_data["surname"]= incoming_data["surname"]
+    new_staff_data["email"]= incoming_data["email"]
+    new_staff_data["password"]= incoming_data["password"]
+    new_staff_data["password"] = Fernet(Fernet_Key_Staff).encrypt(str(new_staff_data["password"]).encode()).decode()
+
+    cursor.execute(f'''update staffs set content= ({Json(new_staff_data)}) where id={staff_id}   ;''')
+    commit__connection_close(connection,cursor)
+    return {"status":"updated"}
 
 
 
+
+@router.delete("/delete",summary="staff silme")
+def delete_staff(staff_id:int,check_staff:Staff=Depends(token_check)):
+    staff_check , connection,cursor = check_staff
+    if not staff_check: return JSONResponse(status_code=401, content={"status":False,"message":"staff_not_found"})
+
+    check_record = fetchone__dict2dot(cursor,f'''select * from staffs;''')
+    if not check_record:
+        connection_close(connection,cursor)
+        return {"status":"staff_not_found"}
+
+    cursor.execute(f'''delete from staffs where id ={staff_id}    ;''')
+    commit__connection_close(connection,cursor)
+    return {"status":"deleted"}
