@@ -1,8 +1,10 @@
+from django.utils.text import slugify
 from fastapi import APIRouter, Depends
 from psycopg2.extras import Json
 from pydantic import BaseModel
 from starlette.responses import JSONResponse
 
+from base_engine import create_db_session
 from functions import token_check, fetchone__dict2dot, connection_close, commit__connection_close, fetchall__dict2dot
 from routers.staff import Staff
 
@@ -11,22 +13,39 @@ router = APIRouter()
 
 class CreateCategory(BaseModel):
     content: dict = {
-        "name": "",
-        "slug": ""
+        "name": ""
+
     }
 class UpdateCategory(BaseModel):
     content: dict = {
-        "name": "",
-        "slug": ""
+        "name": ""
+
     }
+
+
+
+def update_slug():
+    connection,cursor=create_db_session()
+    slugs = fetchall__dict2dot(cursor,f'''select * from category;''')
+
+    for slug in slugs:
+        slug.content['slug'] = slugify(slug.content['name'])
+        cursor.execute(f'''update category set content={Json(slug.content)} where id={slug.id}    ;''')
+
+    commit__connection_close(connection,cursor)
+    print("Güncelleme Başarılı")
+
 
 
 @router.post("/post", summary="Kategori Ekleme")
 def add_category(category: CreateCategory, chekc_staff: Staff = Depends(token_check)):
+
     staff_check, connection, cursor = chekc_staff
     if not staff_check: return JSONResponse(status_code=401, content={"status": False, "message": "staff_not_found"})
 
     content = category.content
+    content["slug"] = content["name"]
+    content["slug"] = slugify(content["slug"])
 
     cursor.execute(f'''insert into category (content) values ({Json(content)})  ;''')
     commit__connection_close(connection,cursor)
